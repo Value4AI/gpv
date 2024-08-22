@@ -7,7 +7,7 @@ from tqdm import tqdm
 from pprint import pprint
 import time
 
-from src.gpv import GPV
+from gpv.measure import GPV
 
 
 
@@ -28,12 +28,10 @@ perceptions = [
 values = ["self-direction", "stimulation", "hedonism", "achievement", "power", "security", "conformity", "tradition", "benevolence", "universalism"]
 
 
-
 gpv = GPV(parsing_model_name='gemma-7b')
 
 start = time.time()
 
-# results = gpv.measure_perceptions(perceptions, values)
 results = gpv.measure_texts(texts, values)
 
 pprint(results)
