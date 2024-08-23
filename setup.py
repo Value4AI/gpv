@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="gpv",
-    version="0.1.0",  # Initial version
+    version="0.1.1",  # Initial version
     author="Haoran Ye",
     author_email="hrye@stu.pku.edu.cn",
     description="Generative Psychometrics for Values",

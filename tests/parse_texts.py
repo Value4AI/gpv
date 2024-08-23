@@ -18,14 +18,11 @@ texts = [
     "But see, this is nothing new, this has been my whole life.    The man has never said, ' good job sagan, I knew you could do it!'    EVER.",
 ]
 
-values = ["self-direction", "stimulation", "hedonism", "achievement", "power", "security", "conformity", "tradition", "benevolence", "universalism"]
-
-
 gpv = GPV(parsing_model_name='gemma-7b')
 
 start = time.time()
 
-results = gpv.measure_texts(texts, values)
+results = gpv.parse_texts(texts)
 
 pprint(results)
 

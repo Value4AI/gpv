@@ -154,3 +154,24 @@ class GPV:
             results_lst.append(results)
 
         return results_lst
+    
+    def parse_texts(self, texts: list[str]):
+        # Chunk all texts at once
+        all_chunks = self.chunker.chunk(texts) # list[list[str]]
+        # Flatten the chunks
+        flat_chunks = [chunk for chunks in all_chunks for chunk in chunks]
+        # Parse all chunks in one batch
+        all_perceptions = self.parser.parse(flat_chunks) # list[list[str]]; a list of perceptions for each chunk
+        
+        # Reorganize the results according to the original texts
+        results_lst = []
+        chunk_index = 0
+        for i, chunks in enumerate(all_chunks):
+            results = []
+            for j, chunk in enumerate(chunks):
+                perceptions = all_perceptions[chunk_index]
+                chunk_index += 1
+                results.extend(perceptions)
+            results_lst.append(results)
+        return results_lst
+        
