@@ -87,20 +87,24 @@ class EntityParser:
     def __init__(self, model_name="gpt-4o-mini", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT_ENTITY, **kwargs)
 
-    def parse(self, texts: list[str], entities: list[list[str]], batch_size=100) -> list[dict]:
+    def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=100) -> list[dict]:
         """
         Parse the text into perceptions
         
         Args:
         - text: list[str]: The list of texts to be parsed
         - entities: list[str]: The list of list of entities to extract from the text, each list corresponds to the entities for the corresponding text
+        - entity_resolution: dict: A dictionary that maps the resolved entities to their coreferences
         - batch_size: int: The batch size for the model
         """
         # Generate user prompts
         user_prompts = []
         for text, entity_list in zip(texts, entities):
             for entity in entity_list:
-                user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity))
+                if entity_resolution and entity in entity_resolution:
+                    user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity + " (" + entity_resolution[entity] + ")"))
+                else:
+                    user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity))
 
         # Get responses in batch
         responses = self.model(user_prompts, batch_size=batch_size, response_format="json")
