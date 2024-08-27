@@ -43,7 +43,7 @@ class NER_ZH:
         from nerpy import NERModel
         self.model = NERModel("bert", "shibing624/bert4ner-base-chinese")
     
-    def extract_entities(self, texts: list[str]) -> list[list[dict]]:
+    def extract_persons_from_texts(self, texts: list[str]) -> list[list[dict]]:
         predictions, raw_outputs, entities = self.model.predict(texts, split_on_space=False)
         
         persons_lst = []
