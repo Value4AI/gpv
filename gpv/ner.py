@@ -37,8 +37,30 @@ class NER:
             ner_results_batch = self.extract_entities(batch)
             ner_results.extend(ner_results_batch)
         return [self._extract_persons(ner_result) for ner_result in ner_results]
+    
+class NER_ZH:
+    def __init__(self) -> None:
+        from nerpy import NERModel
+        self.model = NERModel("bert", "shibing624/bert4ner-base-chinese")
+    
+    def extract_entities(self, texts: list[str]) -> list[list[dict]]:
+        predictions, raw_outputs, entities = self.model.predict(texts, split_on_space=False)
+        
+        persons_lst = []
+        for entity_text in entities:
+            persons = []
+            for name, type in entity_text:
+                if type == "PER":
+                    persons.append(name)
+            persons_lst.append(persons)
+        return persons_lst
+
 
 if __name__ == "__main__":
-    ner = NER()
-    persons = ner.extract_persons_from_texts(["Fei Zhang was the president.", "Haoran Ye founded SpaceX."])
+    # ner = NER()
+    # persons = ner.extract_persons_from_texts(["Fei Zhang was the president.", "Haoran Ye founded SpaceX."])
+    # print(persons)
+
+    ner_zh = NER_ZH()
+    persons = ner_zh.extract_entities(["张飞和刘备是好朋友。", "猪八戒和沙悟净是西天取经的好朋友。"])
     print(persons)
