@@ -1,3 +1,5 @@
+import json
+
 from transformers import pipeline
 try:
     from .models import LLMModel
@@ -43,7 +45,7 @@ def coref_resolve_simple(entities: list[str]) -> list[str]:
     
     return entities, entity2coref
 
-def coref_resolve_llm(entities: list[str], model="gemma-7b") -> list[str]:
+def coref_resolve_llm(entities: list[str], model_name="Qwen1.5-110B-Chat") -> list[str]:
     """
     A resolution method using LLM.
     
@@ -54,7 +56,33 @@ def coref_resolve_llm(entities: list[str], model="gemma-7b") -> list[str]:
     flatten_entities = list(set([entity for sublist in entities for entity in sublist])) # list[str]
     
     # TODO: Implement the coreference resolution using LLM
+    system_prompt = """Perform coreference resolution for the entities given by the user. Return the resolved entities and a dictionary mapping the resolved entities to their coreferences. An example is provided below:
+    
+    **User Input:** 八戒，猪八戒，孙悟空，悟空，孙大圣
+    **Output of JSON format:** {"resolved_entities": ["孙悟空", "猪八戒"], "entity2coref": {"孙悟空": ["悟空", "孙大圣"], "猪八戒": ["八戒"]}}"""
+    
+    user_prompt = ", ".join(flatten_entities)
+    model = LLMModel(model_name, system_prompt=system_prompt)
+    result = model([user_prompt], batch_size=1, response_format="json")[0]
+    result_json = json.loads(result.strip("```json").strip("```"))
+    
+    resolved_entities, entity2coref = result_json["resolved_entities"], result_json["entity2coref"]
 
+    # Replace the entities
+    entity2resolved = {}
+    for resolved, corefs in entity2coref.items():
+        for coref in corefs:
+            entity2resolved[coref] = resolved
+    for i, _entities in enumerate(entities):
+        for j, entity in enumerate(_entities):
+            if entity in entity2resolved:
+                entities[i][j] = entity2resolved[entity]
+    # Deduplicate the entities
+    entities = [list(set(_entities)) for _entities in entities]
+    
+    return entities, entity2coref
+    
+    
 
 class Translator:
     def __init__(self):

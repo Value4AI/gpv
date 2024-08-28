@@ -174,4 +174,10 @@ class GPV:
                 results.extend(perceptions)
             results_lst.append(results)
         return results_lst
+    
+    def measure_entities(self, text: str):
+        """
+        Measures the involved entities in the text
+        """
+        pass
         

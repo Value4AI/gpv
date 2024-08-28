@@ -1,38 +1,51 @@
 from pprint import pprint
+import json
 
 from gpv.chunker import Chunker
-from gpv.summarizer import Summarizer
-from gpv.ner import NER
+from gpv.ner import NER, NER_ZH
 from gpv.parser import EntityParser
 from gpv.measure import GPV
 
-from gpv.utils import coref_resolve
+from gpv.utils import Translator, coref_resolve_llm, coref_resolve_simple
 from gpv.measure import get_score
 
-path = "data/The Road to Evergreen.txt"
+
+IS_ZH = True
+
+translator = Translator()
+CHUNK_SIZE = 600 if IS_ZH else 300
+
+path = "data/西游记人物简介.txt"
+
+with open(path, "r") as f:
+    data = f.read()
 
 values = ["Universalism", "Hedonism", "Achievement", "Power", "Security", "Conformity", "Tradition", "Benevolence", "Stimulation", "Self-Direction"]
 
 with open(path, 'r') as file:
     text = file.read()
 
-# Step 1: chunking (larger chunks, about 400 tokens)
-chunker = Chunker(chunk_size=200)
+# Step 1: chunking
+chunker = Chunker(chunk_size=CHUNK_SIZE)
 chunks = chunker.chunk([text])[0]
 print(len(chunks))
 print('-'*50)
 
-# Step 3: entity extraction
-ner = NER()
+# Step 2: entity extraction
+if IS_ZH:
+    ner = NER_ZH()
+else:
+    ner = NER()
 entities = ner.extract_persons_from_texts(chunks) # list[list[str]]
 # Resolve coreferences
-entities = coref_resolve(entities)
+entities, entity2coref = coref_resolve_llm(entities)
 pprint(entities)
+pprint(entity2coref)
 print('-'*50)
 
-# Step 4: parsing for each entity
-parser = EntityParser(model_name="gemma-7b")
-perceptions = parser.parse(chunks, entities)
+# Step 3: parsing for each entity
+parser = EntityParser(model_name="Qwen1.5-110B-Chat")
+perceptions = parser.parse(chunks, entities, entity2coref)
 pprint(perceptions)
 print('-'*50)
 
@@ -45,17 +58,30 @@ for chunk_perceptions in perceptions:
         entity2perceptions[entity].extend(chunk_perceptions[entity])
 pprint(entity2perceptions)
 print('-'*50)
+# Save entity2perceptions
+with open('outputs/entity2perceptions.json', 'w') as f:
+    json.dump(entity2perceptions, f)
 
-# Step 5: measuring for each entity
+# Translate all perceptions
+if IS_ZH:
+    for entity, perceptions in entity2perceptions.items():
+        entity2perceptions[entity] = translator.translate(perceptions)
+pprint(entity2perceptions)
+print('-'*50)
+
+# Step 4: measuring for each entity
 all_perceptions = []
 for entity, perceptions in entity2perceptions.items():
     all_perceptions.extend(perceptions)
 
 gpv = GPV()
 measurement_results = gpv.measure_perceptions(all_perceptions, values)
-
 pprint(measurement_results)
 print('-'*50)
+# Save measurement_results
+with open('outputs/measurement_results.json', 'w') as f:
+    json.dump(measurement_results, f)
+
 
 # Distribute the measurement results back to the entities
 entities = list(entity2perceptions.keys())
@@ -77,3 +103,6 @@ for entity, value2scores in entity2scores.items():
         else:
             entity2scores[entity][value] = sum(scores) / len(scores)
 pprint(entity2scores)
+# Save entity2scores
+with open('outputs/entity2scores.json', 'w') as f:
+    json.dump(entity2scores, f)

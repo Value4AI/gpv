@@ -31,19 +31,18 @@ Human values are the core beliefs that guide our actions and judgments across a 
 - A perception should be value-laden and accurately describe the measurement subject.
 - A perception is atomic, meaning it cannot be further decomposed into smaller units.
 - A perception is well-contextualized and self-contained.
-- The composition of all perceptions is comprehensive, ensuring that no related content in the textual data is left unmeasured.
 ---
 
 [Task]
-You help evaluate the values of a given measurement subject. Given a long text, you parse it into the author's perceptions. You respond in the following JSON format:
+You help evaluate the values of a given measurement subject. Given a long text, you parse it into the measurement subject's most relevant perceptions. You respond in the following JSON format:
 {"perceptions": ["perception 1", "perception 2", ...]}
+Please **only** include perceptions that are very relevant to the **values** of **the measurement subject**. If there are no relevant perceptions found, you can respond with an empty list.
 ---
 
 [Example]
 **Text:** "Three strangers shared a train compartment. Maria, a businesswoman, clutched her tablet, calculating profits. To her, success was measured in numbers. Jack, a teacher, glanced at his watch, eager to reach home. His joy lay in nurturing young minds. Across from them, Emily, a free spirit, sketched flowers in her notebook. She lived for beauty and spontaneity, unbound by routine.
 The train jolted, spilling Maria's coffee. Jack quickly offered tissues, while Emily admired the swirling pattern on the floor.
 Maria sighed at the mess, Jack saw an opportunity to help, and Emily saw unexpected art. Three worlds in one space."
-
 **Measurement subject:** "Maria"
 
 **Your response:** {"perceptions": ["Maria values success and measures it in numerical terms.", "Maria is distressed by the coffee spill."]}
@@ -101,8 +100,8 @@ class EntityParser:
         user_prompts = []
         for text, entity_list in zip(texts, entities):
             for entity in entity_list:
-                if entity_resolution and entity in entity_resolution:
-                    user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity + " (" + entity_resolution[entity] + ")"))
+                if entity_resolution and len(entity_resolution.get(entity, [])) > 0:
+                    user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity + " (" + ", ".join(entity_resolution[entity]) + ")"))
                 else:
                     user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity))
 
