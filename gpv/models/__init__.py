@@ -8,7 +8,7 @@ MODEL_LIST = {
     LlamaAPIModel: ['gemma-7b', 'gemma-2b',] # These are gemma instruct/chat models
         + [f'Qwen1.5-{n}B-Chat' for n in [110, 72, 32, 14, 7, 4, 1.8, 0.5]], # We use LlamaAPI for these models, one can also implement them locally
     # LlamaModel: ['meta-llama/Llama-2-7b-chat-hf'],
-    OpenAIModel: ['gpt-3.5-turbo', 'gpt-4-turbo', 'gpt-4o-mini'],
+    OpenAIModel: ['gpt-3.5-turbo', 'gpt-4-turbo', 'gpt-4o-mini', 'gpt-4o'],
     # VicunaModel: ['lmsys/vicuna-7b-v1.5-16k'],
     # MistralModel: ['mistralai/Mistral-7B-Instruct-v0.1', 'mistralai/Mistral-7B-Instruct-v0.2'],
     # YiModel: ['01-ai/Yi-6B-Chat'],
