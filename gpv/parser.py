@@ -109,10 +109,9 @@ class EntityParser:
         responses = self.model(user_prompts, batch_size=batch_size, response_format="json")
 
         # Parse responses
-        perceptions_per_text = []
+        entity2perceptions = {}
         response_idx = 0
-        for text, entity_list in zip(texts, entities):
-            entity_perceptions = {}
+        for entity_list in entities:
             for entity in entity_list:
                 try:
                     response = json.loads(responses[response_idx].strip("```json").strip("```"))
@@ -121,12 +120,11 @@ class EntityParser:
                     print(e)
                     warnings.warn(f"Failed to parse the response: {response}") 
                     perceptions = []
-                entity_perceptions[entity] = perceptions
+                if entity not in entity2perceptions:
+                    entity2perceptions[entity] = []
+                entity2perceptions[entity].extend(perceptions)
                 response_idx += 1
-                
-            perceptions_per_text.append(entity_perceptions)
-        
-        return perceptions_per_text
+        return entity2perceptions
         
 
 

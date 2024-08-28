@@ -1,12 +1,15 @@
 import os
+import json
 import numpy as np
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
 
 from .chunker import Chunker
-from .parser import Parser
+from .parser import Parser, EntityParser
 from .valuellama import ValueLlama
+from .ner import NER, NER_ZH
+from .utils import coref_resolve_llm, coref_resolve_simple
 
 def get_valence_value(valence_vec):
     """
@@ -42,12 +45,13 @@ def get_score(valence_vec):
 class GPV:
     def __init__(
                 self,
-                parsing_model_name="gpt-4o-mini",
+                parsing_model_name="Qwen1.5-110B-Chat",
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
-                chunk_size=200,
+                chunk_size=300,
                 ):
         self.device = device
+        self.parser_model_name = parsing_model_name
         self.chunker = Chunker(chunk_size=chunk_size)
         self.parser = Parser(model_name=parsing_model_name)
         self.measurement_system = ValueLlama(model_name=measurement_model_name, device=device)
@@ -175,9 +179,60 @@ class GPV:
             results_lst.append(results)
         return results_lst
     
-    def measure_entities(self, text: str):
+    def measure_entities(self, text: str, values: list[str], is_zh: bool = False):
         """
         Measures the involved entities in the text
         """
-        pass
+        if is_zh:
+            self.chunker.chunk_size *= 2
+            self.ner = NER_ZH()
+        else:
+            self.ner = NER()
+
+        # Step 1: Chunk the text
+        chunks = self.chunker.chunk([text])[0]
         
+        # Step 2: Entity Recognition
+        entities = self.ner.extract_persons_from_texts(chunks) # list[list[str]]
+        
+        # Step 3: Coreference Resolution
+        if is_zh:
+            entities, entity2coref = coref_resolve_llm(entities)
+        else:
+            entities, entity2coref = coref_resolve_simple(entities)
+        
+        # Step 4: Parsing for each entity
+        self.parser = EntityParser(model_name=self.parser_model_name)
+        entity2perceptions = self.parser.parse(chunks, entities, entity2coref)
+        with open('outputs/entity2perceptions_test.json', 'w') as f:
+            json.dump(entity2perceptions, f)
+        
+        # Step 5: Measuring all perceptions
+        all_perceptions = []
+        for entity, perceptions in entity2perceptions.items():
+            all_perceptions.extend(perceptions)
+        measurement_results = self.measure_perceptions(all_perceptions, values)
+        with open('outputs/measurement_results_test.json', 'w') as f:
+            json.dump(measurement_results, f)
+        
+        # Step 6: Distribute the measurement results back to the entities
+        entities = list(entity2perceptions.keys())
+        entity2scores = {entity: {_value: [] for _value in values} for entity in entities}
+        for entity, perceptions in entity2perceptions.items():
+            for perception in perceptions:
+                measurements = measurement_results[perception]
+                for value_idx, value in enumerate(measurements['relevant_values']):
+                    valence_vec = measurements['valences'][value_idx]
+                    score = get_score(valence_vec)
+                    if score is not None:
+                        entity2scores[entity][value].append(score)
+
+        # Step 7: Aggregate the scores
+        for entity, value2scores in entity2scores.items():
+            for value, scores in value2scores.items():
+                if len(scores) == 0:
+                    entity2scores[entity][value] = None
+                else:
+                    entity2scores[entity][value] = sum(scores) / len(scores)
+        
+        return entity2scores

@@ -3,11 +3,12 @@ import semchunk
 
 class Chunker:
     def __init__(self, chunk_size: int, model_name: str = "gpt-4"):
+        self.model_name = model_name
         self.chunk_size = chunk_size
-        self.chunker = semchunk.chunkerify(model_name, chunk_size)
 
     def chunk(self, text: list[str]) -> list[list[str]]:
-        return self.chunker(text)
+        chunker = semchunk.chunkerify(self.model_name, self.chunk_size)
+        return chunker(text)
 
 
 if __name__ == "__main__":

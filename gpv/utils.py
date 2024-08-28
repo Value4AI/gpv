@@ -45,7 +45,7 @@ def coref_resolve_simple(entities: list[str]) -> list[str]:
     
     return entities, entity2coref
 
-def coref_resolve_llm(entities: list[str], model_name="Qwen1.5-110B-Chat") -> list[str]:
+def coref_resolve_llm(entities: list[list[str]], model_name="Qwen1.5-110B-Chat") -> list[str]:
     """
     A resolution method using LLM.
     
@@ -55,11 +55,13 @@ def coref_resolve_llm(entities: list[str], model_name="Qwen1.5-110B-Chat") -> li
     # Deduplicate the entities
     flatten_entities = list(set([entity for sublist in entities for entity in sublist])) # list[str]
     
-    # TODO: Implement the coreference resolution using LLM
     system_prompt = """Perform coreference resolution for the entities given by the user. Return the resolved entities and a dictionary mapping the resolved entities to their coreferences. An example is provided below:
-    
-    **User Input:** 八戒，猪八戒，孙悟空，悟空，孙大圣
-    **Output of JSON format:** {"resolved_entities": ["孙悟空", "猪八戒"], "entity2coref": {"孙悟空": ["悟空", "孙大圣"], "猪八戒": ["八戒"]}}"""
+    ---
+    **User Input:** 八戒, 猪八戒, 唐僧, 唐三藏
+    **Output of JSON format:** {"resolved_entities": ["猪八戒", "唐僧"], "entity2coref": {"孙悟空": ["猪八戒": ["八戒"]], "唐僧": ["唐三藏"]}}
+    ---
+    Strictly follow the format of the example and do not add any additional information.
+    """
     
     user_prompt = ", ".join(flatten_entities)
     model = LLMModel(model_name, system_prompt=system_prompt)
@@ -79,19 +81,8 @@ def coref_resolve_llm(entities: list[str], model_name="Qwen1.5-110B-Chat") -> li
                 entities[i][j] = entity2resolved[entity]
     # Deduplicate the entities
     entities = [list(set(_entities)) for _entities in entities]
-    
-    return entities, entity2coref
-    
-    
 
-class Translator:
-    def __init__(self):
-        self.translator = pipeline("translation", model="Helsinki-NLP/opus-mt-zh-en")
-    
-    def translate(self, texts: list[str]) -> list[str]:
-        results = self.translator(texts, return_text=True)
-        translated = [result['translation_text'] for result in results]
-        return translated
+    return entities, entity2coref
 
 
 if __name__ == "__main__":
@@ -106,10 +97,7 @@ if __name__ == "__main__":
     
     chunker = Chunker(chunk_size=600)
     chunks = chunker.chunk([data])[0]
-    
-    translator = Translator()
-    chunks = translator.translate(chunks)
-    
+
     print(len(chunks))
     
     ner = NER()
