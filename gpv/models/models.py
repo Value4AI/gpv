@@ -409,14 +409,12 @@ class LlamaAPIModel(OpenAIModel):
 
     
 if __name__ == "__main__":
-    # Test LlamaModel
-    model_name = "lmsys/vicuna-7b-v1.5-16k"
-    max_new_tokens = 100
-    temperature = 0.
+    model_name = "llama3.1-405b"
 
-    model = VicunaModel(model_name, max_new_tokens, temperature, device='cuda', dtype=torch.float16)
+    model = LlamaAPIModel(model_name, max_new_tokens=4096, temperature=0)
+
+    user_prompt = "Hi there"
+    response = model.predict(user_prompt)
     
-    input_text = "Hello! How are you?"
-    response = model.predict(input_text)
-    print("model_name response:")
     print(response)
+        

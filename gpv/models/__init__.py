@@ -5,7 +5,7 @@ from .models import *
 # A dictionary mapping of model architecture to its supported model names
 MODEL_LIST = {
     # InternLMModel: ['internlm/internlm2-chat-7b', 'internlm/internlm2-chat-20b', 'internlm/internlm-chat-7b'],
-    LlamaAPIModel: ['gemma-7b', 'gemma-2b',] # These are gemma instruct/chat models
+    LlamaAPIModel: ['gemma-7b', 'gemma-2b', 'llama3.1-405b'] # These are gemma instruct/chat models
         + [f'Qwen1.5-{n}B-Chat' for n in [110, 72, 32, 14, 7, 4, 1.8, 0.5]], # We use LlamaAPI for these models, one can also implement them locally
     # LlamaModel: ['meta-llama/Llama-2-7b-chat-hf'],
     OpenAIModel: ['gpt-3.5-turbo', 'gpt-4-turbo', 'gpt-4o-mini', 'gpt-4o'],

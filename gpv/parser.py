@@ -20,7 +20,7 @@ You help evaluate the values of the text's author. Given a long text, you parse 
 ---
 
 [Example]
-Text: "Yesterday, the 5th of August, was the first day of our program for the preparation for perpetual vows. I felt so happy to be back in Don Bosco and to meet again my other classmates from the novitiate who still remain in religious life. It was also extremely nice to see Fr. Pepe Reinoso, one of my beloved Salesian professors at DBCS, who commenced our preparation program with his topic on the Anthropological and Psychological Dynamics in the vocation to religious life."
+**Text:** "Yesterday, the 5th of August, was the first day of our program for the preparation for perpetual vows. I felt so happy to be back in Don Bosco and to meet again my other classmates from the novitiate who still remain in religious life. It was also extremely nice to see Fr. Pepe Reinoso, one of my beloved Salesian professors at DBCS, who commenced our preparation program with his topic on the Anthropological and Psychological Dynamics in the vocation to religious life."
 Your response: {"perceptions": ["Feeling happy to be back in Don Bosco and meeting classmates in the novitiate", "Appreciation for Fr. Pepe Reinoso and his teachings on Anthropological and Psychological Dynamics in the vocation to the religious life"]}
 ---
 """
@@ -43,6 +43,7 @@ Please **only** include perceptions that are very relevant to the **values** of 
 **Text:** "Three strangers shared a train compartment. Maria, a businesswoman, clutched her tablet, calculating profits. To her, success was measured in numbers. Jack, a teacher, glanced at his watch, eager to reach home. His joy lay in nurturing young minds. Across from them, Emily, a free spirit, sketched flowers in her notebook. She lived for beauty and spontaneity, unbound by routine.
 The train jolted, spilling Maria's coffee. Jack quickly offered tissues, while Emily admired the swirling pattern on the floor.
 Maria sighed at the mess, Jack saw an opportunity to help, and Emily saw unexpected art. Three worlds in one space."
+
 **Measurement subject:** "Maria"
 
 **Your response:** {"perceptions": ["Maria values success and measures it in numerical terms.", "Maria is distressed by the coffee spill."]}
@@ -50,12 +51,12 @@ Maria sighed at the mess, Jack saw an opportunity to help, and Emily saw unexpec
 """
 
 
-USER_PROMPT_TEMPLATE = "Text: {text}"
+USER_PROMPT_TEMPLATE = "**Text:** {text}"
 
-USER_PROMPT_ENTITY_TEMPLATE = "Text: {text}\nMeasurement subject: {entity}"
+USER_PROMPT_ENTITY_TEMPLATE = "**Text:** {text}\n\n**Measurement subject:** {entity}"
 
 class Parser:
-    def __init__(self, model_name="gpt-4o-mini", **kwargs):
+    def __init__(self, model_name="llama3.1-405b", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT, **kwargs)
 
     def parse(self, texts: list[str], batch_size=100) -> list[list[str]]:
@@ -83,10 +84,10 @@ class Parser:
 
 
 class EntityParser:
-    def __init__(self, model_name="gpt-4o-mini", **kwargs):
+    def __init__(self, model_name="llama3.1-405b", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT_ENTITY, **kwargs)
 
-    def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=100) -> list[dict]:
+    def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=1) -> list[dict]:
         """
         Parse the text into perceptions
         
@@ -130,7 +131,7 @@ class EntityParser:
 
 
 if __name__ == "__main__":
-    parser = EntityParser(model_name='gemma-7b', temperature=0.)
+    parser = EntityParser(model_name='llama3.1-405b', temperature=0.)
     texts = [
        """
        In a bustling city, Maria, an ambitious lawyer, prized success above all. She worked tirelessly, believing wealth equaled worth. Her brother, Daniel, a dedicated teacher, valued knowledge and integrity. He found purpose in shaping young minds, unconcerned with riches. Their neighbor, Olivia, an artist, cherished freedom and creativity, living modestly but passionately, painting the world as she saw it.

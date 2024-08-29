@@ -45,7 +45,7 @@ def get_score(valence_vec):
 class GPV:
     def __init__(
                 self,
-                parsing_model_name="Qwen1.5-110B-Chat",
+                parsing_model_name="llama3.1-405b",
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
                 chunk_size=300,
