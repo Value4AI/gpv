@@ -232,3 +232,35 @@ class GPV:
                     entity2scores[entity][value] = sum(scores) / len(scores)
         
         return entity2scores
+    
+    def measure_entities_perceptions(self, entity2perceptions: dict, values: list[str]):
+        """
+        Measures the involved entities given the perceptions
+        """
+        # Step 5: Measuring all perceptions
+        all_perceptions = []
+        for entity, perceptions in entity2perceptions.items():
+            all_perceptions.extend(perceptions)
+        measurement_results = self.measure_perceptions(all_perceptions, values)
+        
+        # Step 6: Distribute the measurement results back to the entities
+        entities = list(entity2perceptions.keys())
+        entity2scores = {entity: {_value: [] for _value in values} for entity in entities}
+        for entity, perceptions in entity2perceptions.items():
+            for perception in perceptions:
+                measurements = measurement_results[perception]
+                for value_idx, value in enumerate(measurements['relevant_values']):
+                    valence_vec = measurements['valences'][value_idx]
+                    score = get_score(valence_vec)
+                    if score is not None:
+                        entity2scores[entity][value].append(score)
+
+        # Step 7: Aggregate the scores
+        for entity, value2scores in entity2scores.items():
+            for value, scores in value2scores.items():
+                if len(scores) == 0:
+                    entity2scores[entity][value] = None
+                else:
+                    entity2scores[entity][value] = sum(scores) / len(scores)
+        
+        return entity2scores
