@@ -204,16 +204,12 @@ class GPV:
         # Step 4: Parsing for each entity
         self.parser = EntityParser(model_name=self.parser_model_name)
         entity2perceptions = self.parser.parse(chunks, entities, entity2coref)
-        with open('outputs/entity2perceptions_test.json', 'w') as f:
-            json.dump(entity2perceptions, f)
-        
+
         # Step 5: Measuring all perceptions
         all_perceptions = []
         for entity, perceptions in entity2perceptions.items():
             all_perceptions.extend(perceptions)
         measurement_results = self.measure_perceptions(all_perceptions, values)
-        with open('outputs/measurement_results_test.json', 'w') as f:
-            json.dump(measurement_results, f)
         
         # Step 6: Distribute the measurement results back to the entities
         entities = list(entity2perceptions.keys())

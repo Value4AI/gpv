@@ -87,7 +87,7 @@ class EntityParser:
     def __init__(self, model_name="llama3.1-405b", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT_ENTITY, **kwargs)
 
-    def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=1) -> list[dict]:
+    def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=20) -> list[dict]:
         """
         Parse the text into perceptions
         

@@ -1,7 +1,7 @@
 from transformers import AutoTokenizer, AutoModelForTokenClassification, pipeline
 
 class NER:
-    def __init__(self, model_name="dslim/bert-large-NER"):
+    def __init__(self, model_name="dslim/bert-base-NER"):
         self.model_name = model_name
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForTokenClassification.from_pretrained(model_name)
