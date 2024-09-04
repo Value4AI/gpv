@@ -89,7 +89,7 @@ class EntityParser:
 
     def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=20) -> list[dict]:
         """
-        Parse the text into perceptions
+        Parse the texts into perceptions
         
         Args:
         - text: list[str]: The list of texts to be parsed
