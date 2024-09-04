@@ -10,7 +10,7 @@ class ValueLlama:
         self.model = AutoModelForCausalLM.from_pretrained(
             model_name,
             torch_dtype=torch.bfloat16,
-            device_map="auto",
+            device_map=device,
         )
 
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
