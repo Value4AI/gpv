@@ -182,6 +182,11 @@ class GPV:
     def measure_entities(self, text: str, values: list[str], is_zh: bool = False):
         """
         Measures the involved entities in the text
+        
+        Args:
+            text (str): The text to be measured
+            values (list[str]): The values to be measured
+            is_zh (bool): Whether the text is in Chinese
         """
         if is_zh:
             self.chunker.chunk_size *= 2

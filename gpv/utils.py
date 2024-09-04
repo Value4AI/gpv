@@ -84,6 +84,25 @@ def coref_resolve_llm(entities: list[list[str]], model_name="Qwen1.5-110B-Chat")
 
     return entities, entity2coref
 
+def gen_queries_for_perception_retrieval(value: str, model_name: str="Qwen1.5-110B-Chat"):
+    """
+    Generate queries for perception retrieval.
+    """
+    system_prompt = """You are an expert in Psychology and Human Values. You are provided with a value and you need to write two items that support and oppose the value, respectively. You respond using JSON format. An example is provided below:
+---
+**Value:** Self-Direction
+**Your Response:** {"support": "Thinking up new ideas and being creative is important to me.", "oppose": "I think it is important to do what I'm told."}
+---
+Strictly follow the format of the example and do not add any additional information.
+"""
+    user_prompt = "**Value:** " + value
+    model = LLMModel(model_name, system_prompt=system_prompt)
+    result = model([user_prompt], batch_size=1, response_format="json")[0]
+    result_json = json.loads(result.strip("```json").strip("```"))
+    support, oppose = result_json["support"], result_json["oppose"]
+    return support, oppose
+    
+
 
 if __name__ == "__main__":
     from chunker import Chunker
