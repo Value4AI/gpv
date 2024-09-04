@@ -3,18 +3,25 @@ import numpy as np
 import pandas as pd
 from openai import OpenAI
 from gpv.chunker import Chunker
-from gpv.utils import gen_queries_for_perception_retrieval
+from gpv.parser import EntityParser
+from gpv.measure import GPV
+from gpv.embd import SentenceEmbedding
+from gpv.utils import gen_queries_for_perception_retrieval, get_score
 
-measurement_subject = "悟空"
+
+
+measurement_subject = "沙僧"
+values = ["Self-Direction", "Stimulation", "Hedonism", "Achievement", "Power", "Security", "Conformity", "Tradition", "Benevolence", "Universalism"]
+
+value2scores = {_value: [] for _value in values}
 
 # Step 1: Load the data
-test_size = 50000
 path = "data/西游记-zh.txt"
 with open(path, "r") as file:
-    book = file.read()[0:test_size]
+    book = file.read()
 
 # Step 2: Chunk the data
-CHUNKS_SIZE = 600
+CHUNKS_SIZE = 300
 chunker = Chunker(chunk_size=CHUNKS_SIZE)
 chunks = chunker.chunk(book)
 
@@ -25,69 +32,54 @@ for chunk in chunks:
         measurement_chunks.append(chunk)
 
 # Step 4: Embed the chunks that contain the measurement subject
-client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])
-embedding_model_name = "text-embedding-3-large"
-response = client.embeddings.create(
-    input=measurement_chunks,
-    model=embedding_model_name,
-)
-embeddings = [response.data[i].embedding for i in range(len(response.data))]
+embd_model = SentenceEmbedding()
+embeddings = embd_model.get_embedding(measurement_chunks) # shape: (num_chunks, embedding_dim)
 
-# Step 5: Find the queries for a given value
-value = "Self-Direction"
-path = "data/value_orientation.csv"
-df = pd.read_csv(path)
-# Select the first "item" where value==value and agrement==1
-query_supports = df[(df["value"] == value) & (df["agreement"] == 1)]
-# Select the first "item" where value==value and agrement==-1
-query_opposes = df[(df["value"] == value) & (df["agreement"] == -1)]
-if len(query_supports) == 0 or len(query_opposes) == 0:
-    query_support, query_oppose = gen_queries_for_perception_retrieval(value)
-else:
-    query_support = query_supports["item"].iloc[0]
-    query_oppose = query_opposes["item"].iloc[0]
-print("Query support:", query_support)
-print("Query oppose:", query_oppose)
+for value in values:
+    # Step 5: Find the queries for a given value
+    query_supports, query_opposes = gen_queries_for_perception_retrieval(value, measurement_subject)
+    print("Query support:", query_supports)
+    print("Query oppose:", query_opposes)
+    queries = query_supports + query_opposes
 
-# Step 6: Embed the two queries
-response_support = client.embeddings.create(
-    input=[query_support],
-    model=embedding_model_name,
-)
-response_oppose = client.embeddings.create(
-    input=[query_oppose],
-    model=embedding_model_name,
-)
-query_embedding_support = response_support.data[0].embedding
-query_embedding_oppose = response_oppose.data[0].embedding
+    # Step 6: Embed the two queries
+    queries_embedding = embd_model.get_embedding(queries) # shape: (n_queries, embedding_dim)
 
-# Step 7: Find the most similar K chunks to either of the two queries
-K = 2
-similar_chunks = []
-embeddings_np = np.array(embeddings)
-query_embedding_np_support = np.array(query_embedding_support)
-query_embedding_np_oppose = np.array(query_embedding_oppose)
-cosine_similarities_support = embeddings_np @ query_embedding_np_support.T
-cosine_similarities_oppose = embeddings_np @ query_embedding_np_oppose.T
-assert len(cosine_similarities_support) == len(measurement_chunks)
-assert len(cosine_similarities_oppose) == len(measurement_chunks)
-cosine_similarities = np.concatenate([cosine_similarities_support, cosine_similarities_oppose]) # Concatenate the two arrays
-indices = np.argsort(cosine_similarities)[::-1][:K]
-for i in indices:
-    similar_chunks.append(measurement_chunks[i % len(measurement_chunks)])
+    # Step 7: Find the topk similar chunks
+    K = 50
+    similar_chunks = []
+    cosine_similarities = embeddings @ queries_embedding.T # shape: (num_chunks, n_queries)
+    cosine_similarities_max = np.max(cosine_similarities, axis=1)
+    topk_indices = np.argsort(cosine_similarities_max)[-K:]
+    similar_chunks = [measurement_chunks[i] for i in topk_indices]
 
-# Step 8: Measure the chunks for the given entity and value
-from gpv.parser import EntityParser
-parser_model_name = "Qwen1.5-110B-Chat"
-parser = EntityParser(parser_model_name)
-perceptions = parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])
-print(perceptions)
+    # Step 8: Measure the chunks for the given entity and value
+    parser_model_name = "Qwen1.5-110B-Chat"
+    parser = EntityParser(parser_model_name)
+    perceptions = parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
+    print("Example perceptions:", perceptions[:5])
+    print("Number of perceptions:", len(perceptions))
 
-# Step 9: Measure perceptions
-from gpv.measure import GPV
-gpv = GPV()
-measurement_results = gpv.measure_perceptions(perceptions, [value])
+    # Step 9: Measure perceptions
+    gpv = GPV()
+    measurement_results = gpv.measure_perceptions(perceptions, values)
 
-# Step 10: Aggregate the results
+    # Step 10: Aggregate the results
+    for p in measurement_results:
+        p_measurements = measurement_results[p]
+        for i in range(len(p_measurements["relevant_values"])):
+            current_value = p_measurements["relevant_values"][i]
+            value_valence = p_measurements["valences"][i]
+            value_score = get_score(value_valence)
+            if value_score is not None:
+                value2scores[current_value].append(value_score)
 
+# Step 11: Calculate the average score for each value
+value2avg_scores = {}
+for value in value2scores:
+    if len(value2scores[value]) == 0:
+        value2avg_scores[value] = None
+    else:
+        value2avg_scores[value] = np.mean(value2scores[value])
 
+print("Value to average scores:", value2avg_scores)
