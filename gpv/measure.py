@@ -9,37 +9,7 @@ from .chunker import Chunker
 from .parser import Parser, EntityParser
 from .valuellama import ValueLlama
 from .ner import NER, NER_ZH
-from .utils import coref_resolve_llm, coref_resolve_simple
-
-def get_valence_value(valence_vec):
-    """
-    Returns the valence of the value vector
-    """
-    if valence_vec[0] > valence_vec[1] and valence_vec[0] > valence_vec[2]:
-        return valence_vec[0].item()
-    elif valence_vec[1] > valence_vec[0] and valence_vec[1] > valence_vec[2]:
-        return - valence_vec[1].item()
-    else:
-        return None
-    
-def get_valence_label(valence_vec):
-    """
-    Returns the valence of the value vector
-    """
-    if valence_vec[0] > valence_vec[1] and valence_vec[0] > valence_vec[2]:
-        return "Supports"
-    elif valence_vec[1] > valence_vec[0] and valence_vec[1] > valence_vec[2]:
-        return "Opposes"
-    else:
-        return "Either"
-
-def get_score(valence_vec):
-    """
-    Returns the score of the value
-    """
-    if valence_vec[2] > valence_vec[0] and valence_vec[2] > valence_vec[1]:
-        return None
-    return valence_vec[0] - valence_vec[1]
+from .utils import coref_resolve_llm, coref_resolve_simple, get_score
 
 
 class GPV:
