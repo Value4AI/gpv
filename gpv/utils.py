@@ -160,10 +160,18 @@ def gen_queries_for_perception_retrieval(value: str, measurement_subject: str, m
 ---
 """
     user_prompt = f"Value: {value}; Person: {measurement_subject}"
-    model = LLMModel(model_name, system_prompt=system_prompt)
-    result = model([user_prompt], batch_size=1, response_format="json")[0]
-    result_json = json.loads(result.strip("```json").strip("```"))
-    support, oppose = result_json["support"], result_json["oppose"]
+    model = LLMModel(model_name, system_prompt=system_prompt, temperature=0.5)
+    count = 0
+    while count < 5: # Retry if the response is invalid
+        count += 1
+        result = model([user_prompt], batch_size=1, response_format="json")[0]
+        try:
+            result_json = json.loads(result.strip("```json").strip("```"))
+            support, oppose = result_json["support"], result_json["oppose"]
+            break
+        except:
+            continue
+            
     return support, oppose
     
 def get_openai_sentence_embedding(input_texts: list[str], model_name: str='text-embedding-3-large') -> list[torch.Tensor]:

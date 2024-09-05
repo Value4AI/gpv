@@ -9,7 +9,9 @@ from transformers import AutoModel, AutoTokenizer
 class SentenceEmbedding:
     def __init__(self, model_name_or_path: str='Alibaba-NLP/gte-multilingual-base', device="cuda:0"):
         self.device = device
-        self.model = AutoModel.from_pretrained(model_name_or_path, trust_remote_code=True, device_map=device)
+        if device == "auto":
+            self.device = "cuda:0" if torch.cuda.is_available() else "cpu"
+        self.model = AutoModel.from_pretrained(model_name_or_path, trust_remote_code=True, device_map=self.device)
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
     
 
