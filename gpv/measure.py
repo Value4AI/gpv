@@ -9,13 +9,14 @@ from .chunker import Chunker
 from .parser import Parser, EntityParser
 from .valuellama import ValueLlama
 from .ner import NER, NER_ZH
-from .utils import coref_resolve_llm, coref_resolve_simple, get_score
+from .embd import SentenceEmbedding
+from .utils import coref_resolve_llm, coref_resolve_simple, get_score, gen_queries_for_perception_retrieval
 
 
 class GPV:
     def __init__(
                 self,
-                parsing_model_name="llama3.1-405b",
+                parsing_model_name="Qwen1.5-110B-Chat",
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
                 chunk_size=300,
@@ -25,6 +26,7 @@ class GPV:
         self.chunker = Chunker(chunk_size=chunk_size)
         self.parser = Parser(model_name=parsing_model_name)
         self.measurement_system = ValueLlama(model_name=measurement_model_name, device=device)
+        self.embd_model = SentenceEmbedding(device=device)
 
 
     def measure_perceptions(self, perceptions: list[str], values: list[str]):
@@ -151,7 +153,7 @@ class GPV:
     
     def measure_entities(self, text: str, values: list[str], is_zh: bool = False):
         """
-        Measures the involved entities in the text
+        Measures the involved entities in the text chunk by chunk; the entities are extracted by the NER
         
         Args:
             text (str): The text to be measured
@@ -239,3 +241,77 @@ class GPV:
                     entity2scores[entity][value] = sum(scores) / len(scores)
         
         return entity2scores
+
+    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str]):
+        """
+        Measures the involved entities in the text using RAG; the entities should by given
+        """
+        subject_value2avg_scores = {}
+        self.parser = EntityParser("Qwen1.5-110B-Chat")
+                
+        for measurement_subject in measurement_subjects:
+
+            value2scores = {_value: [] for _value in values}
+            # Step 2: Chunk the data
+            chunks = self.chunker.chunk(text)
+
+            # Step 3: Find all the chunks that contain the measurement subject
+            measurement_chunks = []
+            for chunk in chunks:
+                if measurement_subject in chunk:
+                    measurement_chunks.append(chunk)
+
+            # Step 4: Embed the chunks that contain the measurement subject
+            embeddings = self.embd_model.get_embedding(measurement_chunks) # shape: (num_chunks, embedding_dim)
+
+            for value in values:
+                print("Value:", value)
+                
+                # Step 5: Find the queries for a given value
+                query_supports, query_opposes = gen_queries_for_perception_retrieval(value, measurement_subject)
+                print("Query support:", query_supports)
+                print("Query oppose:", query_opposes)
+                queries = query_supports + query_opposes
+
+                # Step 6: Embed the two queries
+                queries_embedding = self.embd_model.get_embedding(queries) # shape: (n_queries, embedding_dim)
+
+                # Step 7: Find the topk similar chunks
+                K = 20
+                similar_chunks = []
+                cosine_similarities = embeddings @ queries_embedding.T # shape: (num_chunks, n_queries)
+                cosine_similarities_max = np.max(cosine_similarities, axis=1)
+                topk_indices = np.argsort(cosine_similarities_max)[-K:]
+                similar_chunks = [measurement_chunks[i] for i in topk_indices]
+
+                # Step 8: Measure the chunks for the given entity and value
+                perceptions = self.parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
+                print("Example perceptions:", perceptions[:5])
+                print("Number of perceptions:", len(perceptions))
+
+                # Step 9: Measure perceptions
+                measurement_results = self.measure_perceptions(perceptions, values)
+
+                # Step 10: Aggregate the results
+                for p in measurement_results:
+                    p_measurements = measurement_results[p]
+                    for i in range(len(p_measurements["relevant_values"])):
+                        current_value = p_measurements["relevant_values"][i]
+                        value_valence = p_measurements["valences"][i]
+                        value_score = get_score(value_valence)
+                        if value_score is not None:
+                            value2scores[current_value].append(value_score)
+
+            # Step 11: Calculate the average score for each value
+            value2avg_scores = {}
+            for value in value2scores:
+                if len(value2scores[value]) == 0:
+                    value2avg_scores[value] = None
+                else:
+                    value2avg_scores[value] = np.mean(value2scores[value])
+
+            print("Value to average scores:", value2avg_scores)
+            
+            subject_value2avg_scores[measurement_subject] = value2avg_scores
+            
+        return subject_value2avg_scores
