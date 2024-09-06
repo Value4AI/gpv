@@ -348,7 +348,7 @@ class OpenAIModel(LLMBaseModel):
         assert "n" not in kwargs or kwargs["n"] == 1, "n > 1 is not supported for batch prediction."
         responses_list = []
         batch_size = kwargs["batch_size"] if "batch_size" in kwargs else 50
-        for start_idx in tqdm(range(0, len(input_texts), batch_size)):
+        for start_idx in tqdm(range(0, len(input_texts), batch_size), disable=True):
             end_idx = min(start_idx + batch_size, len(input_texts))
             batch_input_texts = input_texts[start_idx: end_idx]
             batch_results_list = self.multi_predict(batch_input_texts, **kwargs)

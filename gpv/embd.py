@@ -29,7 +29,7 @@ class SentenceEmbedding:
         """
         embeddings_list = []
         
-        for i in tqdm(range(0, len(input_texts), batch_size), desc="Embedding"):
+        for i in tqdm(range(0, len(input_texts), batch_size), desc="Embedding", disable=True):
             # Select the batch
             batch_texts = input_texts[i:i + batch_size]
             
