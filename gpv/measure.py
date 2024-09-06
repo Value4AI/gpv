@@ -16,7 +16,7 @@ from .utils import coref_resolve_llm, coref_resolve_simple, get_score, gen_queri
 class GPV:
     def __init__(
                 self,
-                parsing_model_name="Qwen1.5-110B-Chat",
+                parsing_model_name="Qwen2-72B",
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
                 chunk_size=300,
@@ -247,19 +247,22 @@ class GPV:
         Measures the involved entities in the text using RAG; the entities should by given
         """
         subject_value2avg_scores = {}
-        self.parser = EntityParser("Qwen1.5-110B-Chat")
-                
+        self.parser = EntityParser("Qwen2-72B")
+
+        # Step 2: Chunk the data
+        chunks = self.chunker.chunk(text)
+
         for measurement_subject in measurement_subjects:
 
             value2scores = {_value: [] for _value in values}
-            # Step 2: Chunk the data
-            chunks = self.chunker.chunk(text)
 
             # Step 3: Find all the chunks that contain the measurement subject
             measurement_chunks = []
             for chunk in chunks:
                 if measurement_subject in chunk:
                     measurement_chunks.append(chunk)
+            
+            print("Number of measurement chunks:", len(measurement_chunks))
 
             # Step 4: Embed the chunks that contain the measurement subject
             embeddings = self.embd_model.get_embedding(measurement_chunks) # shape: (num_chunks, embedding_dim)
@@ -273,10 +276,10 @@ class GPV:
                 print("Query oppose:", query_opposes)
                 queries = query_supports + query_opposes
 
-                # Step 6: Embed the two queries
+                # Step 6: Embed the queries
                 queries_embedding = self.embd_model.get_embedding(queries) # shape: (n_queries, embedding_dim)
 
-                # Step 7: Find the topk similar chunks
+                # Step 7: Find the topk semantically qualified chunks; we can then extract the perceptions (items) from these chunks
                 K = 20
                 similar_chunks = []
                 cosine_similarities = embeddings @ queries_embedding.T # shape: (num_chunks, n_queries)
@@ -286,11 +289,12 @@ class GPV:
 
                 # Step 8: Measure the chunks for the given entity and value
                 perceptions = self.parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
-                print("Example perceptions:", perceptions[:5])
+                print("Example perceptions:", perceptions[-5:])
                 print("Number of perceptions:", len(perceptions))
 
                 # Step 9: Measure perceptions
                 measurement_results = self.measure_perceptions(perceptions, values)
+                # measurement_results = self.measure_perceptions(perceptions, [value]) # TODO test: Measure only the single value of each query
 
                 # Step 10: Aggregate the results
                 for p in measurement_results:
@@ -312,6 +316,8 @@ class GPV:
 
             print("Value to average scores:", value2avg_scores)
             
-            subject_value2avg_scores[measurement_subject] = value2avg_scores
+            subject_value2avg_scores[measurement_subject] = {}
+            subject_value2avg_scores[measurement_subject]["scores"] = value2scores
+            subject_value2avg_scores[measurement_subject]["aggregated"] = value2avg_scores
             
         return subject_value2avg_scores
