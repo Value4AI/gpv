@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from transformers import AutoTokenizer, AutoModelForCausalLM
 import torch
+from datetime import datetime
 
 from .chunker import Chunker
 from .parser import Parser, EntityParser
@@ -242,21 +243,22 @@ class GPV:
         
         return entity2scores
 
-    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str]):
+    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str], K: int=10):
         """
         Measures the involved entities in the text using RAG; the entities should by given
         """
         subject_value2avg_scores = {}
+        subject_value2scores = {}
         self.parser = EntityParser("Qwen2-72B")
 
-        # Step 2: Chunk the data
+        # Chunk the data
         chunks = self.chunker.chunk(text)
 
         for measurement_subject in measurement_subjects:
 
             value2scores = {_value: [] for _value in values}
 
-            # Step 3: Find all the chunks that contain the measurement subject
+            # Find all the chunks that contain the measurement subject
             measurement_chunks = []
             for chunk in chunks:
                 if measurement_subject in chunk:
@@ -264,39 +266,38 @@ class GPV:
             
             print("Number of measurement chunks:", len(measurement_chunks))
 
-            # Step 4: Embed the chunks that contain the measurement subject
+            # Embed the chunks that contain the measurement subject
             embeddings = self.embd_model.get_embedding(measurement_chunks) # shape: (num_chunks, embedding_dim)
 
             for value in values:
                 print("Value:", value)
                 
-                # Step 5: Find the queries for a given value
+                # Find the queries for a given value
                 query_supports, query_opposes = gen_queries_for_perception_retrieval(value, measurement_subject)
                 print("Query support:", query_supports)
                 print("Query oppose:", query_opposes)
                 queries = query_supports + query_opposes
 
-                # Step 6: Embed the queries
+                # Embed the queries
                 queries_embedding = self.embd_model.get_embedding(queries) # shape: (n_queries, embedding_dim)
 
-                # Step 7: Find the topk semantically qualified chunks; we can then extract the perceptions (items) from these chunks
-                K = 20
+                # Find the topk semantically qualified chunks; we can then extract the perceptions (items) from these chunks
                 similar_chunks = []
                 cosine_similarities = embeddings @ queries_embedding.T # shape: (num_chunks, n_queries)
                 cosine_similarities_max = np.max(cosine_similarities, axis=1)
                 topk_indices = np.argsort(cosine_similarities_max)[-K:]
                 similar_chunks = [measurement_chunks[i] for i in topk_indices]
 
-                # Step 8: Measure the chunks for the given entity and value
+                # Measure the chunks for the given entity and value
                 perceptions = self.parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
                 print("Example perceptions:", perceptions[-5:])
                 print("Number of perceptions:", len(perceptions))
 
-                # Step 9: Measure perceptions
+                # Measure perceptions
                 measurement_results = self.measure_perceptions(perceptions, values)
                 # measurement_results = self.measure_perceptions(perceptions, [value]) # TODO test: Measure only the single value of each query
 
-                # Step 10: Aggregate the results
+                # Aggregate the results
                 for p in measurement_results:
                     p_measurements = measurement_results[p]
                     for i in range(len(p_measurements["relevant_values"])):
@@ -306,18 +307,20 @@ class GPV:
                         if value_score is not None:
                             value2scores[current_value].append(value_score)
 
-            # Step 11: Calculate the average score for each value
+            # Calculate the average score for each value
             value2avg_scores = {}
             for value in value2scores:
                 if len(value2scores[value]) == 0:
                     value2avg_scores[value] = None
                 else:
                     value2avg_scores[value] = np.mean(value2scores[value])
-
-            print("Value to average scores:", value2avg_scores)
             
-            subject_value2avg_scores[measurement_subject] = {}
-            subject_value2avg_scores[measurement_subject]["scores"] = value2scores
-            subject_value2avg_scores[measurement_subject]["aggregated"] = value2avg_scores
-            
+            subject_value2avg_scores[measurement_subject] = value2avg_scores
+            subject_value2scores[measurement_subject] = value2scores
+        
+        # Save value2scores
+        save_path = "value2scores_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
+        with open(save_path, "w") as file:
+            json.dump(subject_value2scores, file, indent=4)
+        
         return subject_value2avg_scores
