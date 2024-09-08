@@ -21,7 +21,7 @@ perceptions = [
 values = ["self-direction", "stimulation", "hedonism", "achievement", "power", "security", "conformity", "tradition", "benevolence", "universalism"]
 
 
-gpv = GPV(parsing_model_name='gemma-7b')
+gpv = GPV()
 
 start = time.time()
 

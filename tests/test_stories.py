@@ -11,7 +11,7 @@ with open(path, 'r') as file:
 
 stories = [_data["story"] for _data in data]
 
-gpv = GPV(parsing_model_name="Qwen1.5-110B-Chat")
+gpv = GPV()
 
 results = []
 for story in stories:

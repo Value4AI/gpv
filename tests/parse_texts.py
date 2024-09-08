@@ -18,7 +18,7 @@ texts = [
     "But see, this is nothing new, this has been my whole life.    The man has never said, ' good job sagan, I knew you could do it!'    EVER.",
 ]
 
-gpv = GPV(parsing_model_name='gemma-7b')
+gpv = GPV()
 
 start = time.time()
 
