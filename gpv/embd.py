@@ -1,6 +1,4 @@
-import os
 from tqdm import tqdm
-from openai import OpenAI
 import torch
 import torch.nn.functional as F
 from transformers import AutoModel, AutoTokenizer

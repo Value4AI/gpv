@@ -1,9 +1,6 @@
 import os
 import json
 import numpy as np
-import pandas as pd
-from transformers import AutoTokenizer, AutoModelForCausalLM
-import torch
 from datetime import datetime
 
 from .chunker import Chunker
@@ -294,8 +291,8 @@ class GPV:
                 print("Number of perceptions:", len(perceptions))
 
                 # Measure perceptions
-                measurement_results = self.measure_perceptions(perceptions, values)
-                # measurement_results = self.measure_perceptions(perceptions, [value]) # TODO test: Measure only the single value of each query
+                # measurement_results = self.measure_perceptions(perceptions, values)
+                measurement_results = self.measure_perceptions(perceptions, [value]) # TODO test: Measure only the single value of each query
 
                 # Aggregate the results
                 for p in measurement_results:

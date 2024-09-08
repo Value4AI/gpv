@@ -1,11 +1,4 @@
-import warnings
-import logging
-import pandas as pd
-import datetime
-import json
-from tqdm import tqdm
 from pprint import pprint
-import time
 
 from gpv import GPV
 
@@ -22,11 +15,5 @@ values = ["self-direction", "stimulation", "hedonism", "achievement", "power", "
 
 
 gpv = GPV()
-
-start = time.time()
-
 results = gpv.measure_perceptions(perceptions, values)
-
 pprint(results)
-
-print("Time taken:", time.time() - start)

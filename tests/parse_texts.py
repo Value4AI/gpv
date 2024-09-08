@@ -1,15 +1,7 @@
-import warnings
-import logging
-import pandas as pd
-import datetime
-import json
-from tqdm import tqdm
 from pprint import pprint
 import time
 
 from gpv import GPV
-
-
 
 
 texts = [
@@ -19,11 +11,5 @@ texts = [
 ]
 
 gpv = GPV()
-
-start = time.time()
-
 results = gpv.parse_texts(texts)
-
 pprint(results)
-
-print("Time taken:", time.time() - start)
