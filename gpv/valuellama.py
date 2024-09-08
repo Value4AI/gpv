@@ -68,7 +68,7 @@ Output:\n"""
         elif total_memory > 50_000_000_000:
             self.inference_batch_size = 64
         else:
-            self.inference_batch_size = 32
+            self.inference_batch_size = 24
 
 
     def get_probs(self, inputs, batch_size=None):
