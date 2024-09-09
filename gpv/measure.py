@@ -201,7 +201,7 @@ class GPV:
         return subject_value2avg_scores
 
 
-    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str], K: int=100, threshold: int=10):
+    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str], coref_resolve: dict=None, K: int=50, threshold: int=5):
         """
         Measure the given entities in the text based on RAG.
         
@@ -222,12 +222,19 @@ class GPV:
         chunks = self.chunker.chunk(text)
 
         for measurement_subject in measurement_subjects:
+            # Resolve coreferences
+            if coref_resolve:
+                corefs = coref_resolve.get(measurement_subject, []) + [measurement_subject]
+            else:
+                corefs = [measurement_subject]
 
             # Find all the chunks that contain the measurement subject
             measurement_chunks = []
             for chunk in chunks:
-                if measurement_subject in chunk:
-                    measurement_chunks.append(chunk)
+                for coref in corefs:
+                    if coref in chunk:
+                        measurement_chunks.append(chunk)
+                        break
             
             print("Number of measurement chunks:", len(measurement_chunks))
 
@@ -247,6 +254,8 @@ class GPV:
 
             # Measure the chunks for the given entity and value
             perceptions = self.parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
+
+            print("Example chunk:", similar_chunks[-1])
             print("Example perceptions:", perceptions[-5:])
             print("Number of perceptions:", len(perceptions))
 
