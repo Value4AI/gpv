@@ -45,6 +45,7 @@ def get_score(valence_vec):
 
 def coref_resolve_simple(entities: list[str]) -> list[str]:
     """
+    Deprecated.
     A simple resolution method. If entity A contains entity B, then entity A is replaced by entity B.
     
     Args:
@@ -84,6 +85,7 @@ def coref_resolve_simple(entities: list[str]) -> list[str]:
 
 def coref_resolve_llm(entities: list[list[str]], model_name="Qwen1.5-110B-Chat") -> list[str]:
     """
+    Deprecated.
     A resolution method using LLM.
     
     Args:
@@ -121,7 +123,7 @@ def coref_resolve_llm(entities: list[list[str]], model_name="Qwen1.5-110B-Chat")
 
     return entities, entity2coref
 
-def gen_queries_for_perception_retrieval(value: str, measurement_subject: str, model_name: str="Qwen1.5-110B-Chat"):
+def gen_queries_for_perception_retrieval(values: list[str], measurement_subject: str, model_name: str="Qwen1.5-110B-Chat"):
     """
     Generate queries via LLM for perception retrieval.
     """
@@ -159,20 +161,22 @@ def gen_queries_for_perception_retrieval(value: str, measurement_subject: str, m
 }
 ---
 """
-    user_prompt = f"Value: {value}; Person: {measurement_subject}"
+    user_prompts = [f"Value: {value}; Person: {measurement_subject}" for value in values]
     model = LLMModel(model_name, system_prompt=system_prompt, temperature=0.5)
-    count = 0
-    while count < 5: # Retry if the response is invalid
-        count += 1
-        result = model([user_prompt], batch_size=1, response_format="json")[0]
+
+    responses = model(user_prompts, response_format="json")
+    supports, opposes = [], []
+    for response in responses:
         try:
-            result_json = json.loads(result.strip("```json").strip("```"))
-            support, oppose = result_json["support"], result_json["oppose"]
-            break
+            response_json = json.loads(response.strip("```json").strip("```"))
+            support, oppose = response_json["support"], response_json["oppose"]
+            supports.extend(support)
+            opposes.extend(oppose)
         except:
+            print("Error:", response)
             continue
-            
-    return support, oppose
+    return supports, opposes
+
     
 def get_openai_sentence_embedding(input_texts: list[str], model_name: str='text-embedding-3-large') -> list[torch.Tensor]:
     """

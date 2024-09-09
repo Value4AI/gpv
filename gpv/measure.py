@@ -6,9 +6,8 @@ from datetime import datetime
 from .chunker import Chunker
 from .parser import Parser, EntityParser
 from .valuellama import ValueLlama
-from .ner import NER, NER_ZH
 from .embd import SentenceEmbedding
-from .utils import coref_resolve_llm, coref_resolve_simple, get_score, gen_queries_for_perception_retrieval
+from .utils import get_score, gen_queries_for_perception_retrieval
 
 
 class GPV:
@@ -18,11 +17,15 @@ class GPV:
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
                 chunk_size=300,
+                measure_author=True,
                 ):
         self.device = device
         self.parser_model_name = parsing_model_name
         self.chunker = Chunker(chunk_size=chunk_size)
-        self.parser = Parser(model_name=parsing_model_name)
+        if measure_author:
+            self.parser = Parser(model_name=parsing_model_name)
+        else:
+            self.parser = EntityParser(model_name=parsing_model_name)
         self.measurement_system = ValueLlama(model_name=measurement_model_name, device=device)
         self.embd_model = SentenceEmbedding(device=device)
 
@@ -128,7 +131,8 @@ class GPV:
             results_lst.append(results)
 
         return results_lst
-    
+
+
     def parse_texts(self, texts: list[str]):
         # Chunk all texts at once
         all_chunks = self.chunker.chunk(texts) # list[list[str]]
@@ -148,112 +152,76 @@ class GPV:
                 results.extend(perceptions)
             results_lst.append(results)
         return results_lst
-    
-    def measure_entities(self, text: str, values: list[str], is_zh: bool = False):
+
+
+    def measure_entities(self, text: str, values: list[str], measurement_subjects: list[str]):
         """
-        Measures the involved entities in the text chunk by chunk; the entities are extracted by the NER
+        Measures the involved entities in the text chunk by chunk
         
         Args:
             text (str): The text to be measured
             values (list[str]): The values to be measured
-            is_zh (bool): Whether the text is in Chinese
-        """
-        if is_zh:
-            self.chunker.chunk_size *= 2
-            self.ner = NER_ZH()
-        else:
-            self.ner = NER()
-
-        # Step 1: Chunk the text
-        chunks = self.chunker.chunk([text])[0]
-        
-        # Step 2: Entity Recognition
-        entities = self.ner.extract_persons_from_texts(chunks) # list[list[str]]
-        
-        # Step 3: Coreference Resolution
-        if is_zh:
-            entities, entity2coref = coref_resolve_llm(entities)
-        else:
-            entities, entity2coref = coref_resolve_simple(entities)
-        
-        # Step 4: Parsing for each entity
-        self.parser = EntityParser(model_name=self.parser_model_name)
-        entity2perceptions = self.parser.parse(chunks, entities, entity2coref)
-
-        # Step 5: Measuring all perceptions
-        all_perceptions = []
-        for entity, perceptions in entity2perceptions.items():
-            all_perceptions.extend(perceptions)
-        measurement_results = self.measure_perceptions(all_perceptions, values)
-        
-        # Step 6: Distribute the measurement results back to the entities
-        entities = list(entity2perceptions.keys())
-        entity2scores = {entity: {_value: [] for _value in values} for entity in entities}
-        for entity, perceptions in entity2perceptions.items():
-            for perception in perceptions:
-                measurements = measurement_results[perception]
-                for value_idx, value in enumerate(measurements['relevant_values']):
-                    valence_vec = measurements['valences'][value_idx]
-                    score = get_score(valence_vec)
-                    if score is not None:
-                        entity2scores[entity][value].append(score)
-
-        # Step 7: Aggregate the scores
-        for entity, value2scores in entity2scores.items():
-            for value, scores in value2scores.items():
-                if len(scores) == 0:
-                    entity2scores[entity][value] = None
-                else:
-                    entity2scores[entity][value] = sum(scores) / len(scores)
-        
-        return entity2scores
-    
-    def measure_entities_perceptions(self, entity2perceptions: dict, values: list[str]):
-        """
-        Measures the involved entities given the perceptions
-        """
-        # Step 5: Measuring all perceptions
-        all_perceptions = []
-        for entity, perceptions in entity2perceptions.items():
-            all_perceptions.extend(perceptions)
-        measurement_results = self.measure_perceptions(all_perceptions, values)
-        
-        # Step 6: Distribute the measurement results back to the entities
-        entities = list(entity2perceptions.keys())
-        entity2scores = {entity: {_value: [] for _value in values} for entity in entities}
-        for entity, perceptions in entity2perceptions.items():
-            for perception in perceptions:
-                measurements = measurement_results[perception]
-                for value_idx, value in enumerate(measurements['relevant_values']):
-                    valence_vec = measurements['valences'][value_idx]
-                    score = get_score(valence_vec)
-                    if score is not None:
-                        entity2scores[entity][value].append(score)
-
-        # Step 7: Aggregate the scores
-        for entity, value2scores in entity2scores.items():
-            for value, scores in value2scores.items():
-                if len(scores) == 0:
-                    entity2scores[entity][value] = None
-                else:
-                    entity2scores[entity][value] = sum(scores) / len(scores)
-        
-        return entity2scores
-
-    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str], K: int=10):
-        """
-        Measures the involved entities in the text using RAG; the entities should by given
+            entity (str): The entity to be measured
         """
         subject_value2avg_scores = {}
         subject_value2scores = {}
-        self.parser = EntityParser("Qwen2-72B")
+        
+        # Chunking
+        chunks = self.chunker.chunk(text)
+        
+        for measurement_subject in measurement_subjects:
+            measurement_chunks = [chunk for chunk in chunks if measurement_subject in chunk]
+            # Parsing for the measurement subject
+            perceptions = self.parser.parse(measurement_chunks, [[measurement_subject] for _ in measurement_chunks])[measurement_subject]
+            # Measuring the perceptions
+            measurement_results = self.measure_perceptions(perceptions, values)
+
+            # Aggregate the results
+            value2scores = {_value: [] for _value in values}
+            for p in measurement_results:
+                p_measurements = measurement_results[p]
+                for i in range(len(p_measurements["relevant_values"])):
+                    current_value = p_measurements["relevant_values"][i]
+                    value_valence = p_measurements["valences"][i]
+                    value_score = get_score(value_valence)
+                    if value_score is not None:
+                        value2scores[current_value].append(value_score)
+
+            # Calculate the average score for each value
+            value2avg_scores = {}
+            for value in value2scores:
+                if len(value2scores[value]) < 1:
+                    value2avg_scores[value] = None
+                else:
+                    value2avg_scores[value] = np.mean(value2scores[value]).item()
+            
+            subject_value2avg_scores[measurement_subject] = value2avg_scores
+            subject_value2scores[measurement_subject] = value2scores
+        
+        return subject_value2avg_scores
+
+
+    def measure_entities_rag(self, text: str, values: list[str], measurement_subjects: list[str], K: int=100, threshold: int=10):
+        """
+        Measure the given entities in the text based on RAG.
+        
+        Args:
+        - text: str: The text to be measured
+        - values: list[str]: The values to be measured
+        - measurement_subjects: list[str]: The entities to be measured
+        - K: int: The number of topk similar chunks to be considered
+        - threshold: int: The minimum number of scores to be considered as evidence
+        
+        Returns:
+        - dict: The dictionary of the average scores for each entity and value
+        """
+        subject_value2avg_scores = {}
+        subject_value2scores = {}
 
         # Chunk the data
         chunks = self.chunker.chunk(text)
 
         for measurement_subject in measurement_subjects:
-
-            value2scores = {_value: [] for _value in values}
 
             # Find all the chunks that contain the measurement subject
             measurement_chunks = []
@@ -265,49 +233,41 @@ class GPV:
 
             # Embed the chunks that contain the measurement subject
             embeddings = self.embd_model.get_embedding(measurement_chunks) # shape: (num_chunks, embedding_dim)
+            
+            query_supports, query_opposes = gen_queries_for_perception_retrieval(values, measurement_subject)
+            queries = query_supports + query_opposes
+            queries_embedding = self.embd_model.get_embedding(queries) # shape: (n_queries, embedding_dim)                
 
-            for value in values:
-                print("Value:", value)
-                
-                # Find the queries for a given value
-                query_supports, query_opposes = gen_queries_for_perception_retrieval(value, measurement_subject)
-                print("Query support:", query_supports)
-                print("Query oppose:", query_opposes)
-                queries = query_supports + query_opposes
+            # Find the topk semantically qualified chunks; we can then extract the perceptions (items) from these chunks
+            similar_chunks = []
+            cosine_similarities = embeddings @ queries_embedding.T # shape: (num_chunks, n_queries)
+            cosine_similarities_max = np.max(cosine_similarities, axis=1) # shape: (num_chunks,)
+            topk_indices = np.argsort(cosine_similarities_max)[-K:]
+            similar_chunks = [measurement_chunks[i] for i in topk_indices]
 
-                # Embed the queries
-                queries_embedding = self.embd_model.get_embedding(queries) # shape: (n_queries, embedding_dim)
+            # Measure the chunks for the given entity and value
+            perceptions = self.parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
+            print("Example perceptions:", perceptions[-5:])
+            print("Number of perceptions:", len(perceptions))
 
-                # Find the topk semantically qualified chunks; we can then extract the perceptions (items) from these chunks
-                similar_chunks = []
-                cosine_similarities = embeddings @ queries_embedding.T # shape: (num_chunks, n_queries)
-                cosine_similarities_max = np.max(cosine_similarities, axis=1)
-                topk_indices = np.argsort(cosine_similarities_max)[-K:]
-                similar_chunks = [measurement_chunks[i] for i in topk_indices]
+            # Measure perceptions
+            measurement_results = self.measure_perceptions(perceptions, values)
 
-                # Measure the chunks for the given entity and value
-                perceptions = self.parser.parse(similar_chunks, [[measurement_subject] for _ in similar_chunks])[measurement_subject]
-                print("Example perceptions:", perceptions[-5:])
-                print("Number of perceptions:", len(perceptions))
-
-                # Measure perceptions
-                # measurement_results = self.measure_perceptions(perceptions, values)
-                measurement_results = self.measure_perceptions(perceptions, [value]) # TODO test: Measure only the single value of each query
-
-                # Aggregate the results
-                for p in measurement_results:
-                    p_measurements = measurement_results[p]
-                    for i in range(len(p_measurements["relevant_values"])):
-                        current_value = p_measurements["relevant_values"][i]
-                        value_valence = p_measurements["valences"][i]
-                        value_score = get_score(value_valence)
-                        if value_score is not None:
-                            value2scores[current_value].append(value_score)
+            # Aggregate the results
+            value2scores = {_value: [] for _value in values}
+            for p in measurement_results:
+                p_measurements = measurement_results[p]
+                for i in range(len(p_measurements["relevant_values"])):
+                    current_value = p_measurements["relevant_values"][i]
+                    value_valence = p_measurements["valences"][i]
+                    value_score = get_score(value_valence)
+                    if value_score is not None:
+                        value2scores[current_value].append(value_score)
 
             # Calculate the average score for each value
             value2avg_scores = {}
             for value in value2scores:
-                if len(value2scores[value]) == 0:
+                if len(value2scores[value]) < threshold: # If the number of scores is less than the threshold, we consider it as None; i.e., no enough evidence
                     value2avg_scores[value] = None
                 else:
                     value2avg_scores[value] = np.mean(value2scores[value])
