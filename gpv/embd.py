@@ -13,7 +13,7 @@ class SentenceEmbedding:
         self.tokenizer = AutoTokenizer.from_pretrained(model_name_or_path)
     
 
-    def get_embedding(self, input_texts: list[str], dimension: int = 768, batch_size: int = 16) -> torch.Tensor:
+    def get_embedding(self, input_texts: list[str], dimension: int = 768, batch_size: int = 8) -> torch.Tensor:
         """
         Get the sentence embeddings of the input texts.
         
