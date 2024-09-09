@@ -119,7 +119,7 @@ class EntityParser:
                     perceptions = response.get("perceptions", [])
                 except Exception as e:
                     print(e)
-                    warnings.warn(f"Failed to parse the response: {response}") 
+                    warnings.warn(f"Failed to parse the response: {responses[response_idx]}")
                     perceptions = []
                 if entity not in entity2perceptions:
                     entity2perceptions[entity] = []
