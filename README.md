@@ -30,16 +30,26 @@ gpv = GPV()
 results = gpv.measure_perceptions(perceptions, values)
 ```
 
-#### Text-level value measurements
+#### Text-level value measurements (for the text author)
 ```python
 from gpv import GPV
 texts = [
-    "So anyhow, one day I was in her apartment, we were smoking, and such, and we got on the subjects of ghosts.  Yvonne and I told her about what happened at my apartment and her apartment.  Beth then said, 'I have a ghost too.'  I was like yeah right.  She said I do it's like to play with my daughter's toys, so I said prove it!  She got up and went into her daughter's room and took out her toy box.  I was like what are you doing, all she said was,'wait.'  So we waited for like 15 minutes, then i did the I have to go to the bathroom trick.  I looked in her daughter's room and two toys were taken out.  I went screaming back to them saying it happened.  When we all came back to look all of the toys were taken out of the box, it was so strange to me.  I never doubted her again.   A few months later I get a call from Beth and she asks me to watch her child, I was like ok, then after I hung up I remembered the ghost.  So I started getting a little worried, but then again I promised her.  When I arrived I saw the little girl, and Beth told me what she liked to do and so on.  After, I played with her daughter, and changed her and gave her a snack, then I wagon told to put her down, I did, and she didn't cry or anything.  As I was sitting there, I was a little freaked, I felt a presence around me, but I was like I couldn't move.  I started to watch TV, and the arms on my hair started raising up.", # An example of a blog post
-    
-    "But see, this is nothing new, this has been my whole life.    The man has never said, ' good job sagan, I knew you could do it!'    EVER. ...",
+    "Today is a good day. I woke up early and went for a run in the park. The weather was perfect, and I felt energized. After my run, I had a healthy breakfast and spent some time reading a book. In the afternoon, I met up with some friends for lunch, and we had a great time catching up. I feel grateful for the wonderful day I had and look forward to more days like this...", # An example of a blog post
+    "...",
 ]
 values = ["hedonism", "achievement", "power", "benevolence", "universalism"]
 gpv = GPV()
 results = gpv.measure_texts(texts, values)
 ```
 
+#### Text-level value measurements (for the given subjects)
+```python
+from gpv import GPV
+texts = [
+    "Mary is a PhD student in computer science. She is working on a project that aims to develop a new algorithm for image recognition. She is very passionate about her work and spends most of her time in the lab. She is determined to make a breakthrough in her field and become a successful researcher. Henry, on the other hand, is a high school student who is struggling with his grades. He is not interested in studying and spends most of his time playing video games. He is not motivated to do well in school and often skips classes. He dreams of becoming a professional gamer and making a living by playing video games.",
+    "...",
+]
+values = ["hedonism", "achievement", "power", "benevolence", "universalism"]
+gpv = GPV(measure_author=False)
+results = gpv.measure_entities(text, values, entities)
+```

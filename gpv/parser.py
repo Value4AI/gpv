@@ -56,7 +56,7 @@ USER_PROMPT_TEMPLATE = "**Text:** {text}"
 USER_PROMPT_ENTITY_TEMPLATE = "**Text:** {text}\n\n**Measurement subject:** {entity}"
 
 class Parser:
-    def __init__(self, model_name="llama3.1-405b", **kwargs):
+    def __init__(self, model_name="Qwen2-72B", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT, **kwargs)
 
     def parse(self, texts: list[str], batch_size=100) -> list[list[str]]:
@@ -72,8 +72,8 @@ class Parser:
         perceptions_per_text = []
         for response in responses:
             try:
-                response = json.loads(response.strip("```json").strip("```"))
-                perceptions = response.get("perceptions", [])
+                response_loaded = json.loads(response.strip("```json").strip("```"))
+                perceptions = response_loaded.get("perceptions", [])
             except Exception as e:
                 print(e)
                 warnings.warn(f"Failed to parse the response: {response}") 
@@ -84,27 +84,23 @@ class Parser:
 
 
 class EntityParser:
-    def __init__(self, model_name="llama3.1-405b", **kwargs):
+    def __init__(self, model_name="Qwen2-72B", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT_ENTITY, **kwargs)
 
-    def parse(self, texts: list[str], entities: list[list[str]], entity_resolution: dict=None, batch_size=20) -> list[dict]:
+    def parse(self, texts: list[str], entities: list[list[str]], batch_size=20) -> list[dict]:
         """
         Parse the texts into perceptions
         
         Args:
         - text: list[str]: The list of texts to be parsed
         - entities: list[str]: The list of list of entities to extract from the text, each list corresponds to the entities for the corresponding text
-        - entity_resolution: dict: A dictionary that maps the resolved entities to their coreferences
         - batch_size: int: The batch size for the model
         """
         # Generate user prompts
         user_prompts = []
         for text, entity_list in zip(texts, entities):
             for entity in entity_list:
-                if entity_resolution and len(entity_resolution.get(entity, [])) > 0:
-                    user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity + " (" + ", ".join(entity_resolution[entity]) + ")"))
-                else:
-                    user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity))
+                user_prompts.append(USER_PROMPT_ENTITY_TEMPLATE.format(text=text, entity=entity))
 
         # Get responses in batch
         responses = self.model(user_prompts, batch_size=batch_size, response_format="json")
@@ -115,11 +111,12 @@ class EntityParser:
         for entity_list in entities:
             for entity in entity_list:
                 try:
-                    response = json.loads(responses[response_idx].strip("```json").strip("```"))
-                    perceptions = response.get("perceptions", [])
+                    response_loaded = json.loads(responses[response_idx].strip("```json").strip("```"))
+                    perceptions = response_loaded.get("perceptions", [])
                 except Exception as e:
                     print(e)
-                    warnings.warn(f"Failed to parse the response: {responses[response_idx]}")
+                    response = responses[response_idx]
+                    warnings.warn(f"Failed to parse the response: {response}")
                     perceptions = []
                 if entity not in entity2perceptions:
                     entity2perceptions[entity] = []
@@ -131,7 +128,7 @@ class EntityParser:
 
 
 if __name__ == "__main__":
-    parser = EntityParser(model_name='llama3.1-405b', temperature=0.)
+    parser = EntityParser(model_name="Qwen2-72B", temperature=0.)
     texts = [
        """
        In a bustling city, Maria, an ambitious lawyer, prized success above all. She worked tirelessly, believing wealth equaled worth. Her brother, Daniel, a dedicated teacher, valued knowledge and integrity. He found purpose in shaping young minds, unconcerned with riches. Their neighbor, Olivia, an artist, cherished freedom and creativity, living modestly but passionately, painting the world as she saw it.
