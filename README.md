@@ -32,6 +32,19 @@ gpv = GPV()
 results = gpv.measure_perceptions(perceptions, values)
 ```
 
+### Parsing long texts into perceptions
+```python
+from gpv import GPV
+
+texts = [
+    "Today is a good day. I woke up early and went for a run in the park. The weather was perfect, and I felt energized. After my run, I had a healthy breakfast and spent some time reading a book. In the afternoon, I met up with some friends for lunch, and we had a great time catching up. I feel grateful for the wonderful day I had and look forward to more days like this...", # e.g., a blog post
+    "...",
+]
+
+gpv = GPV()
+results = gpv.parse_texts(texts)
+```
+
 #### Text-level value measurements (for the text author)
 ```python
 from gpv import GPV
