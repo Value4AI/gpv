@@ -1,6 +1,16 @@
 # Measuring Human and AI Values based on Generative Psychometrics with Large Language Models
 
-### Requirements
+## 🚀 Introduction
+
+This codebased accompanies the paper [*Measuring Human and AI Values based on Generative Psychometrics with Large Language Models*](https://github.com/Value4AI/gpv).
+
+We introduce **G**enerative **P**sychometrics for **V**alues (GPV), an LLM-based, data-driven value measurement paradigm, theoretically grounded in text-revealed selective perceptions.
+
+Compared with traditional tools for measuring human values, GPV (1) effectively mitigates response bias and resource demands by dispensing with self-reports; (2) captures authentic behaviors instead of relying on forced ratings; (3) can handle historical or subjective data; (4) measures values in open-ended value spaces and easily adapts to new or evolving values without expert effort; and (5) enables more scalable and flexible value measurement.
+
+Compare with recent works on measuring LLM values, GPV (1) mitigates response bias and yields more theoretically valid results; (2) is more practically relevant for measuring LLM values based on their scalable and free-form responses; and (3) enables context-specific measurements.
+
+## 📦 Requirements
 - Python 3.10
 - numPy
 - torch
@@ -15,7 +25,13 @@ You may install the required packages by:
 pip install -r requirements.txt
 ```
 
-### Example Usage
+## 🔑 Example Usage
+
+Note that there are two LLMs involved in GPV: the **parsing** LLM and the **measuring** LLM. 
+
+You may set the **parsing** LLM by feeding the `parsing_model_name` parameter when initializing the GPV object. For example, `gpv = GPV(parsing_model_name="gpt-4o-mini")`. Accordingly, you need to set your API key as an environment variable `OPENAI_API_KEY` or [here](./gpv/models/models.py). Alternative LLMs can be used; please see `./gpv/models/` for more details.
+
+The **measuring** LLM is set to our [`ValueLlama`](https://huggingface.co/Value4AI/ValueLlama-3-8B) by default.
 
 #### Perception-level value measurements
 ```python
@@ -94,4 +110,12 @@ results = gpv.measure_entities_rag(
     measurement_subjects=measurement_subjects,
     coref_resolve=coref_resolve
     )
+```
+
+## 📄 Citation
+
+If you find this codebase helpful, we would appreciate it if you give us a star and cite our paper:
+
+```bibtex
+TODO
 ```

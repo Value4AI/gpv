@@ -56,7 +56,7 @@ USER_PROMPT_TEMPLATE = "**Text:** {text}"
 USER_PROMPT_ENTITY_TEMPLATE = "**Text:** {text}\n\n**Measurement subject:** {entity}"
 
 class Parser:
-    def __init__(self, model_name="Qwen2-72B", **kwargs):
+    def __init__(self, model_name="gpt-4o-mini", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT, **kwargs)
 
     def parse(self, texts: list[str], batch_size=100) -> list[list[str]]:
@@ -84,7 +84,7 @@ class Parser:
 
 
 class EntityParser:
-    def __init__(self, model_name="Qwen2-72B", **kwargs):
+    def __init__(self, model_name="gpt-4o-mini", **kwargs):
         self.model = LLMModel(model_name, system_prompt=SYSTEM_PROMPT_ENTITY, **kwargs)
 
     def parse(self, texts: list[str], entities: list[list[str]], batch_size=20) -> list[dict]:
@@ -128,7 +128,7 @@ class EntityParser:
 
 
 if __name__ == "__main__":
-    parser = EntityParser(model_name="Qwen2-72B", temperature=0.)
+    parser = EntityParser(model_name="gpt-4o-mini", temperature=0.)
     texts = [
        """
        In a bustling city, Maria, an ambitious lawyer, prized success above all. She worked tirelessly, believing wealth equaled worth. Her brother, Daniel, a dedicated teacher, valued knowledge and integrity. He found purpose in shaping young minds, unconcerned with riches. Their neighbor, Olivia, an artist, cherished freedom and creativity, living modestly but passionately, painting the world as she saw it.
