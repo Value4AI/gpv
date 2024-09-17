@@ -1,4 +1,4 @@
-import json
+from pprint import pprint
 
 from gpv import GPV
 
@@ -26,11 +26,4 @@ results = gpv.measure_entities_rag(
     K=50,
     threshold=5,
     )
-
-# Save the results
-from datetime import datetime
-save_path = "measurement_results_rag_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
-with open(save_path, "w") as file:
-    json.dump(results, file, indent=4)
-
-print("Results saved to", save_path)
+pprint(results)

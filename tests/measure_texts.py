@@ -1,4 +1,3 @@
-from tqdm import tqdm
 from pprint import pprint
 
 from gpv import GPV

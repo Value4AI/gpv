@@ -11,5 +11,5 @@ texts = [
 ]
 
 gpv = GPV()
-results = gpv.parse_texts(texts)
-pprint(results)
+parsing_results = gpv.parse_texts(texts)
+pprint(parsing_results)
