@@ -25,13 +25,13 @@ pip install -r requirements.txt
 
 ## 🔑 Example Usage
 
-Note that there are two LLMs involved in GPV: the **parsing** LLM and the **measuring** LLM. 
+Note that there are two LLMs involved in GPV: the **parsing LLM** and the **measuring LLM**. 
 
-You may set the **parsing** LLM by feeding the `parsing_model_name` parameter when initializing the GPV object. For example, `gpv = GPV(parsing_model_name="gpt-4o-mini")`. Accordingly, you need to set your API key as an environment variable `OPENAI_API_KEY` or [here](./gpv/models/models.py). Alternative LLMs can be used; please see `./gpv/models/` for more details.
+You may set the **parsing LLM** by feeding the `parsing_model_name` parameter when initializing the GPV object. For example, `gpv = GPV(parsing_model_name="gpt-4o-mini")`. Accordingly, you need to set your API key as an environment variable `OPENAI_API_KEY` or [here](./gpv/models/models.py). Alternative LLMs can be used; please see `./gpv/models/` for more details.
 
-The **measuring** LLM is set to our [`ValueLlama`](https://huggingface.co/Value4AI/ValueLlama-3-8B) by default.
+The **measuring LLM** is set to our [`ValueLlama`](https://huggingface.co/Value4AI/ValueLlama-3-8B) by default.
 
-#### Perception-level value measurements
+### Perception-level value measurements
 ```python
 from gpv import GPV
 
@@ -59,7 +59,7 @@ gpv = GPV()
 results = gpv.parse_texts(texts)
 ```
 
-#### Text-level value measurements (for the text author)
+### Text-level value measurements (for the text author)
 ```python
 from gpv import GPV
 
@@ -73,7 +73,7 @@ gpv = GPV()
 results = gpv.measure_texts(texts, values)
 ```
 
-#### Text-level value measurements (for the given subjects)
+### Text-level value measurements (for the given subjects)
 ```python
 from gpv import GPV
 
@@ -85,7 +85,7 @@ gpv = GPV(measure_author=False)
 results = gpv.measure_entities(text, values, measurement_subjects)
 ```
 
-#### Text-level value measurements based on RAG (for the given subjects)
+### Text-level value measurements based on RAG (for the given subjects)
 ```python
 from gpv import GPV
 
