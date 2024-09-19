@@ -161,7 +161,7 @@ class GPV:
         Args:
             text (str): The text to be measured
             values (list[str]): The values to be measured
-            entity (str): The entity to be measured
+            measurement_subjects (list[str]): The entities to be measured
         """
         subject_value2avg_scores = {}
         subject_value2scores = {}
@@ -209,8 +209,9 @@ class GPV:
         - text: str: The text to be measured
         - values: list[str]: The values to be measured
         - measurement_subjects: list[str]: The entities to be measured
+        - coref_resolve: dict: The dictionary of coreferences for the entities
         - K: int: The number of topk similar chunks to be considered
-        - threshold: int: The minimum number of scores to be considered as evidence
+        - threshold: int: The minimum number of scores to be considered as evident for a value
         
         Returns:
         - dict: The dictionary of the average scores for each entity and value
