@@ -2,7 +2,9 @@
 
 ## 🚀 Introduction
 
-This codebase accompanies the paper [*Measuring Human and AI Values based on Generative Psychometrics with Large Language Models*](https://github.com/Value4AI/gpv). We introduce **G**enerative **P**sychometrics for **V**alues (GPV), an LLM-based, data-driven value measurement paradigm, theoretically grounded in text-revealed selective perceptions.
+This codebase accompanies the paper [*Measuring Human and AI Values based on Generative Psychometrics with Large Language Models*](https://arxiv.org/abs/2409.12106). We introduce **G**enerative **P**sychometrics for **V**alues (GPV), an LLM-based, data-driven value measurement paradigm, theoretically grounded in text-revealed selective perceptions.
+
+![Diagram of GPV](./assets/diagram.png)
 
 Compared with traditional tools for measuring human values, GPV (1) effectively mitigates response bias and resource demands by dispensing with self-reports; (2) captures authentic behaviors instead of relying on forced ratings; (3) can handle historical or subjective data; (4) measures values in open-ended value spaces and easily adapts to new or evolving values without expert effort; and (5) enables more scalable and flexible value measurement.
 
@@ -115,5 +117,13 @@ results = gpv.measure_entities_rag(
 If you find this codebase helpful, we would appreciate it if you give us a star and cite our paper:
 
 ```bibtex
-TODO
+@misc{ye2024gpv,
+      title={Measuring Human and AI Values based on Generative Psychometrics with Large Language Models}, 
+      author={Haoran Ye and Yuhang Xie and Yuanyi Ren and Hanjun Fang and Xin Zhang and Guojie Song},
+      year={2024},
+      eprint={2409.12106},
+      archivePrefix={arXiv},
+      primaryClass={cs.CL},
+      url={https://arxiv.org/abs/2409.12106}, 
+}
 ```
