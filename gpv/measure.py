@@ -124,7 +124,7 @@ class GPV:
 
             for value in values:
                 if agg[value]:
-                    agg[value] = np.mean(agg[value])
+                    agg[value] = np.mean(agg[value]).item()
                 else:
                     agg[value] = None
             results["aggregated"] = agg
@@ -286,8 +286,8 @@ class GPV:
             subject_value2scores[measurement_subject] = value2scores
         
         # Save value2scores
-        save_path = "value2scores_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
-        with open(save_path, "w") as file:
-            json.dump(subject_value2scores, file, indent=4)
+        # save_path = "value2scores_" + datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + ".json"
+        # with open(save_path, "w") as file:
+        #     json.dump(subject_value2scores, file, indent=4)
         
         return subject_value2avg_scores
