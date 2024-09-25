@@ -13,7 +13,7 @@ from .utils import get_score, gen_queries_for_perception_retrieval
 class GPV:
     def __init__(
                 self,
-                parsing_model_name="Qwen2-72B",
+                parsing_model_name="gpt-4o-mini",
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
                 chunk_size=300,
