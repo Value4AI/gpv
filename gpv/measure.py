@@ -280,7 +280,7 @@ class GPV:
                 if len(value2scores[value]) < threshold: # If the number of scores is less than the threshold, we consider it as None; i.e., no enough evidence
                     value2avg_scores[value] = None
                 else:
-                    value2avg_scores[value] = np.mean(value2scores[value])
+                    value2avg_scores[value] = np.mean(value2scores[value]).item()
             
             subject_value2avg_scores[measurement_subject] = value2avg_scores
             subject_value2scores[measurement_subject] = value2scores
