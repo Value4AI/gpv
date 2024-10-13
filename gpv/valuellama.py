@@ -94,7 +94,7 @@ Output:\n"""
             
         logits = []
         prompt_batches=prepare_prompts(inputs, self.tokenizer, batch_size=batch_size)
-        for prompts_tokenized in prompt_batches:
+        for prompts_tokenized in tqdm(prompt_batches, desc="Perception-level measurement"):
             outputs_tokenized=self.model.generate(**prompts_tokenized, max_new_tokens=1, return_dict_in_generate=True, output_scores=True)
             logits_batch = outputs_tokenized.scores[0].detach().cpu() # (batch_size, vocab_size)
             logits.append(logits_batch)

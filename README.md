@@ -44,7 +44,7 @@ perceptions = [
 ]
 values = ["hedonism", "achievement", "power", "benevolence", "universalism"]
 
-gpv = GPV()
+gpv = GPV(parsing_model_name="gpt-4o-mini")
 results = gpv.measure_perceptions(perceptions, values)
 ```
 
@@ -71,7 +71,7 @@ texts = [
 ]
 values = ["hedonism", "achievement", "power", "benevolence", "universalism"]
 
-gpv = GPV()
+gpv = GPV(parsing_model_name="gpt-4o-mini")
 results = gpv.measure_texts(texts, values)
 ```
 
@@ -83,7 +83,7 @@ text = "Mary is a PhD student in computer science. She is working on a project t
 values = ["hedonism", "achievement", "power", "benevolence", "universalism"]
 measurement_subjects = ["Mary", "Henry"]
 
-gpv = GPV(measure_author=False)
+gpv = GPV(parsing_model_name="gpt-4o-mini")
 results = gpv.measure_entities(text, values, measurement_subjects)
 ```
 
@@ -103,7 +103,7 @@ coref_resolve = {
 }
 values = ["Universalism", "Hedonism", "Achievement", "Power", "Security", "Self-Direction", "Stimulation", "Tradition", "Benevolence", "Conformity"]
 
-gpv = GPV(measure_author=False)
+gpv = GPV(parsing_model_name="gpt-4o-mini")
 results = gpv.measure_entities_rag(
     text=book,
     values=values,

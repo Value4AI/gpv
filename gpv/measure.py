@@ -17,23 +17,25 @@ class GPV:
                 measurement_model_name="Value4AI/ValueLlama-3-8B",
                 device='auto',
                 chunk_size=300,
-                measure_author=True,
                 ):
         self.device = device
-        self.parser_model_name = parsing_model_name
-        self.chunker = Chunker(chunk_size=chunk_size)
-        if measure_author:
-            self.parser = Parser(model_name=parsing_model_name)
-        else:
-            self.parser = EntityParser(model_name=parsing_model_name)
-        self.measurement_system = ValueLlama(model_name=measurement_model_name, device=device)
-        self.embd_model = SentenceEmbedding(device=device)
+        self.parsing_model_name = parsing_model_name
+        self.measurement_model_name = measurement_model_name
+        self.chunk_size = chunk_size
+
+        self.parser = None
+        self.measurement_system = None
+        self.chunker = None
+        self.embd_model = None
 
 
     def measure_perceptions(self, perceptions: list[str], values: list[str]):
         """
         Evaluates multiple perceptions in a batch and returns the measure results: relevant values, relevance values, and valence values
         """
+        if self.measurement_system is None:
+            self.measurement_system = ValueLlama(model_name=self.measurement_model_name, device=self.device)
+        
         n_perceptions = len(perceptions)
         n_values = len(values)
         
@@ -93,6 +95,11 @@ class GPV:
 
 
     def measure_texts(self, texts: list[str], values: list[str]):
+        if self.chunker is None:
+            self.chunker = Chunker(chunk_size=self.chunk_size)
+        if self.parser is None:
+            self.parser = Parser(model_name=self.parsing_model_name)
+
         # Chunk all texts at once
         all_chunks = self.chunker.chunk(texts) # list[list[str]]
         # Flatten the chunks
@@ -163,6 +170,9 @@ class GPV:
             values (list[str]): The values to be measured
             measurement_subjects (list[str]): The entities to be measured
         """
+        if self.parser is None:
+            self.parser = EntityParser(model_name=self.parsing_model_name)
+
         subject_value2avg_scores = {}
         subject_value2scores = {}
         
@@ -216,6 +226,11 @@ class GPV:
         Returns:
         - dict: The dictionary of the average scores for each entity and value
         """
+        if self.embd_model is None:
+            self.embd_model = SentenceEmbedding(device=self.device)
+        if self.parser is None:
+            self.parser = EntityParser(model_name=self.parsing_model_name)
+        
         subject_value2avg_scores = {}
         subject_value2scores = {}
 
