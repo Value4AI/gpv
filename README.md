@@ -57,7 +57,7 @@ texts = [
     "...",
 ]
 
-gpv = GPV()
+gpv = GPV(parsing_model_name="gpt-4o-mini")
 results = gpv.parse_texts(texts)
 ```
 
