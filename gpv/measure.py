@@ -141,6 +141,8 @@ class GPV:
 
 
     def parse_texts(self, texts: list[str]):
+        if self.parser is None:
+            self.parser = Parser(model_name=self.parsing_model_name)
         # Chunk all texts at once
         all_chunks = self.chunker.chunk(texts) # list[list[str]]
         # Flatten the chunks
